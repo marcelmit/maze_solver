@@ -45,7 +45,7 @@ class Line:
 )
         
 class Cell:
-    def __init__(self, _x1, _x2, _y1, _y2, _win):
+    def __init__(self, _x1, _y1, _x2, _y2, _win=None):
         self.has_left_wall = True
         self.has_right_wall = True
         self.has_top_wall = True
@@ -57,6 +57,8 @@ class Cell:
         self._win = _win
 
     def draw(self):
+        if not self._win:
+            return
         if self.has_left_wall:
             self._win.canvas.create_line(self._x1, self._y1, self._x1, self._y2)
         if self.has_right_wall:
@@ -79,7 +81,7 @@ class Cell:
         self._win.canvas.create_line(from_x, from_y, to_x, to_y, fill=color, width=2)
 
 class Maze:
-    def __init__(self, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y, win):
+    def __init__(self, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y, win=None):
         self._x1 = x1
         self._y1 = y1
         self._num_rows = num_rows
@@ -98,7 +100,7 @@ class Maze:
                 y1 = self._y1 + row * self._cell_size_y
                 x2 = x1 + self._cell_size_x
                 y2 = y1 + self._cell_size_y
-                cell = Cell(x1, y1, x2, y2, self._win)
+                cell = Cell(x1, y1, x2, y2)
                 cell_row.append(cell)
             self._cells.append(cell_row)
         # Draw each cell
@@ -124,10 +126,11 @@ class Maze:
         self._animate()
 
     def _animate(self):
+        if self._win:
         # Call the window's redraw method
-        self._win.redraw()  
-        # Sleep for 0.05 seconds to visualize the algorithm's progress
-        time.sleep(0.05)
+            self._win.redraw()  
+            # Sleep for 0.05 seconds to visualize the algorithm's progress
+            time.sleep(0.05)
 
 
 def main():
