@@ -1,4 +1,5 @@
 from tkinter import Tk, BOTH, Canvas
+import time
 
 class Window:
     def __init__(self, width, length):
@@ -76,6 +77,57 @@ class Cell:
         color = "gray" if undo else "red"
         # Draw the line on the canvas
         self._win.canvas.create_line(from_x, from_y, to_x, to_y, fill=color, width=2)
+
+class Maze:
+    def __init__(self, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y, win):
+        self._x1 = x1
+        self._y1 = y1
+        self._num_rows = num_rows
+        self._num_cols = num_cols
+        self._cell_size_x = cell_size_x
+        self._cell_size_y = cell_size_y
+        self._win = win
+        self._cells = []
+        self._create_cells()
+
+    def _create_cells(self):
+        for row in range(self._num_rows):
+            cell_row = []
+            for col in range(self._num_cols):
+                x1 = self._x1 + col * self._cell_size_x
+                y1 = self._y1 + row * self._cell_size_y
+                x2 = x1 + self._cell_size_x
+                y2 = y1 + self._cell_size_y
+                cell = Cell(x1, y1, x2, y2, self._win)
+                cell_row.append(cell)
+            self._cells.append(cell_row)
+        # Draw each cell
+        for col in range(self._num_cols):
+            for row in range(self._num_rows):
+                self._draw_cell(row, col)
+
+    def _draw_cell(self, i, j):
+        # Calculate the cell's position based on the row (i) and column (j)
+        x1 = self._x1 + j * self._cell_size_x
+        y1 = self._y1 + i * self._cell_size_y
+        x2 = x1 + self._cell_size_x
+        y2 = y1 + self._cell_size_y  
+        # Update the cell's coordinates
+        cell = self._cells[i][j]
+        cell._x1 = x1
+        cell._y1 = y1
+        cell._x2 = x2
+        cell._y2 = y2  
+        # Draw the cell
+        cell.draw()  
+        # Call the _animate method (assuming it exists)
+        self._animate()
+
+    def _animate(self):
+        # Call the window's redraw method
+        self._win.redraw()  
+        # Sleep for 0.05 seconds to visualize the algorithm's progress
+        time.sleep(0.05)
 
 
 def main():
