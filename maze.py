@@ -59,14 +59,23 @@ class Cell:
     def draw(self):
         if not self._win:
             return
+        background_color = "white"
         if self.has_left_wall:
             self._win.canvas.create_line(self._x1, self._y1, self._x1, self._y2)
+        else:
+            self._win.canvas.create_line(self._x1, self._y1, self._x1, self._y2, fill=background_color)
         if self.has_right_wall:
             self._win.canvas.create_line(self._x2, self._y1, self._x2, self._y2)
+        else:
+            self._win.canvas.create_line(self._x2, self._y1, self._x2, self._y2, fill=background_color)
         if self.has_top_wall:
             self._win.canvas.create_line(self._x1, self._y1, self._x2, self._y1)
+        else:
+            self._win.canvas.create_line(self._x1, self._y1, self._x2, self._y1, fill=background_color)
         if self.has_bottom_wall:
             self._win.canvas.create_line(self._x1, self._y2, self._x2, self._y2)
+        else:
+            self._win.canvas.create_line(self._x1, self._y2, self._x2, self._y2, fill=background_color)
 
     def draw_move(self, to_cell, undo=False):
         # Calculate the center of the current cell
@@ -76,7 +85,7 @@ class Cell:
         to_x = (to_cell._x1 + to_cell._x2) // 2
         to_y = (to_cell._y1 + to_cell._y2) // 2  
         # Choose the color based on the undo flag
-        color = "gray" if undo else "red"
+        color = "grey" if undo else "red"
         # Draw the line on the canvas
         self._win.canvas.create_line(from_x, from_y, to_x, to_y, fill=color, width=2)
 
@@ -107,6 +116,7 @@ class Maze:
         for col in range(self._num_cols):
             for row in range(self._num_rows):
                 self._draw_cell(row, col)
+        self._break_entrance_and_exit()
 
     def _draw_cell(self, i, j):
         # Calculate the cell's position based on the row (i) and column (j)
@@ -131,6 +141,12 @@ class Maze:
             self._win.redraw()  
             # Sleep for 0.05 seconds to visualize the algorithm's progress
             time.sleep(0.05)
+
+    def _break_entrance_and_exit(self):
+        self._cells[0][0].has_top_wall = False
+        self._draw_cell(0, 0)
+        self._cells[self._num_rows - 1][self._num_cols - 1].has_bottom_wall = False
+        self._draw_cell(self._num_rows - 1, self._num_cols - 1)
 
 
 def main():
