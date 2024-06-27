@@ -1,96 +1,21 @@
-from tkinter import Tk, BOTH, Canvas
+from cell import Cell
+import random
 import time
 
-class Window:
-    def __init__(self, width, length):
-        self.width = width
-        self.length = length
-        self.root = Tk()
-        self.root.title
-        self.canvas = Canvas(self.root, width=self.width, height=self.length)
-        self.canvas.pack(fill=BOTH, expand=True)
-        self.running = False
-        self.root.protocol("WM_DELETE_WINDOW", self.close)
-
-    def redraw(self):
-        self.root.update_idletasks()
-        self.root.update()
-
-    def wait_for_close(self):
-        self.running = True
-        while self.running:
-            self.redraw()
-
-    def close(self):
-        self.running = False
-
-    def draw_line(self, line, fill_color):
-        line.draw(self.canvas, fill_color)
-
-class Point:
-    def __init__(self, x, y):
-     self.x = x
-     self.y = y
-
-class Line:
-    def __init__(self, start_point, end_point):
-        self.start_point = start_point
-        self.end_point = end_point
-
-    def draw(self, canvas, fill_color):
-        canvas.create_line(
-            self.start_point.x, self.start_point.y,
-            self.end_point.x, self.end_point.y,
-            fill=fill_color, width=2
-)
-        
-class Cell:
-    def __init__(self, _x1, _y1, _x2, _y2, _win=None):
-        self.has_left_wall = True
-        self.has_right_wall = True
-        self.has_top_wall = True
-        self.has_bottom_wall = True
-        self._x1 = _x1
-        self._x2 = _x2
-        self._y1 = _y1
-        self._y2 = _y2
-        self._win = _win
-
-    def draw(self):
-        if not self._win:
-            return
-        background_color = "white"
-        if self.has_left_wall:
-            self._win.canvas.create_line(self._x1, self._y1, self._x1, self._y2)
-        else:
-            self._win.canvas.create_line(self._x1, self._y1, self._x1, self._y2, fill=background_color)
-        if self.has_right_wall:
-            self._win.canvas.create_line(self._x2, self._y1, self._x2, self._y2)
-        else:
-            self._win.canvas.create_line(self._x2, self._y1, self._x2, self._y2, fill=background_color)
-        if self.has_top_wall:
-            self._win.canvas.create_line(self._x1, self._y1, self._x2, self._y1)
-        else:
-            self._win.canvas.create_line(self._x1, self._y1, self._x2, self._y1, fill=background_color)
-        if self.has_bottom_wall:
-            self._win.canvas.create_line(self._x1, self._y2, self._x2, self._y2)
-        else:
-            self._win.canvas.create_line(self._x1, self._y2, self._x2, self._y2, fill=background_color)
-
-    def draw_move(self, to_cell, undo=False):
-        # Calculate the center of the current cell
-        from_x = (self._x1 + self._x2) // 2
-        from_y = (self._y1 + self._y2) // 2
-        # Calculate the center of the target cell
-        to_x = (to_cell._x1 + to_cell._x2) // 2
-        to_y = (to_cell._y1 + to_cell._y2) // 2  
-        # Choose the color based on the undo flag
-        color = "grey" if undo else "red"
-        # Draw the line on the canvas
-        self._win.canvas.create_line(from_x, from_y, to_x, to_y, fill=color, width=2)
 
 class Maze:
-    def __init__(self, x1, y1, num_rows, num_cols, cell_size_x, cell_size_y, win=None):
+    def __init__(
+        self,
+        x1,
+        y1,
+        num_rows,
+        num_cols,
+        cell_size_x,
+        cell_size_y,
+        win=None,
+        seed=None,
+    ):
+        self._cells = []
         self._x1 = x1
         self._y1 = y1
         self._num_rows = num_rows
@@ -98,81 +23,164 @@ class Maze:
         self._cell_size_x = cell_size_x
         self._cell_size_y = cell_size_y
         self._win = win
-        self._cells = []
+        if seed:
+            random.seed(seed)
+
         self._create_cells()
+        self._break_entrance_and_exit()
+        self._break_walls_r(0, 0)
+        self._reset_cells_visited()
 
     def _create_cells(self):
-        for row in range(self._num_rows):
-            cell_row = []
-            for col in range(self._num_cols):
-                x1 = self._x1 + col * self._cell_size_x
-                y1 = self._y1 + row * self._cell_size_y
-                x2 = x1 + self._cell_size_x
-                y2 = y1 + self._cell_size_y
-                cell = Cell(x1, y1, x2, y2)
-                cell_row.append(cell)
-            self._cells.append(cell_row)
-        # Draw each cell
-        for col in range(self._num_cols):
-            for row in range(self._num_rows):
-                self._draw_cell(row, col)
-        self._break_entrance_and_exit()
+        for i in range(self._num_cols):
+            col_cells = []
+            for j in range(self._num_rows):
+                col_cells.append(Cell(self._win))
+            self._cells.append(col_cells)
+        for i in range(self._num_cols):
+            for j in range(self._num_rows):
+                self._draw_cell(i, j)
 
     def _draw_cell(self, i, j):
-        # Calculate the cell's position based on the row (i) and column (j)
-        x1 = self._x1 + j * self._cell_size_x
-        y1 = self._y1 + i * self._cell_size_y
+        if self._win is None:
+            return
+        x1 = self._x1 + i * self._cell_size_x
+        y1 = self._y1 + j * self._cell_size_y
         x2 = x1 + self._cell_size_x
-        y2 = y1 + self._cell_size_y  
-        # Update the cell's coordinates
-        cell = self._cells[i][j]
-        cell._x1 = x1
-        cell._y1 = y1
-        cell._x2 = x2
-        cell._y2 = y2  
-        # Draw the cell
-        cell.draw()  
-        # Call the _animate method (assuming it exists)
+        y2 = y1 + self._cell_size_y
+        self._cells[i][j].draw(x1, y1, x2, y2)
         self._animate()
 
     def _animate(self):
-        if self._win:
-        # Call the window's redraw method
-            self._win.redraw()  
-            # Sleep for 0.05 seconds to visualize the algorithm's progress
-            time.sleep(0.05)
+        if self._win is None:
+            return
+        self._win.redraw()
+        time.sleep(0.05)
 
     def _break_entrance_and_exit(self):
         self._cells[0][0].has_top_wall = False
         self._draw_cell(0, 0)
-        self._cells[self._num_rows - 1][self._num_cols - 1].has_bottom_wall = False
-        self._draw_cell(self._num_rows - 1, self._num_cols - 1)
+        self._cells[self._num_cols - 1][self._num_rows - 1].has_bottom_wall = False
+        self._draw_cell(self._num_cols - 1, self._num_rows - 1)
 
+    def _break_walls_r(self, i, j):
+        self._cells[i][j].visited = True
+        while True:
+            next_index_list = []
 
-def main():
-    win = Window(800, 600)
-    # Create Cells
-    cell1 = Cell(50, 50, 100, 100, win)
-    cell2 = Cell(110, 50, 160, 100, win)
-    cell3 = Cell(50, 110, 100, 160, win)
-    cell4 = Cell(110, 110, 160, 160, win)
-    # Draw Cells
-    cell1.draw()
-    cell2.draw()
-    cell3.draw()
-    cell4.draw()
-    # Create Points
-    #point1 = Point(10, 10)
-    #point2 = Point(100, 100)
-    #point3 = Point(50, 150)
-    # Create Lines
-    #line1 = Line(point1, point2)
-    #line2 = Line(point3, point1) 
-    # Draw Lines
-    #win.draw_line(line1, "black")
-    #win.draw_line(line2, "red")
-    win.wait_for_close()
+            # determine which cell(s) to visit next
+            # left
+            if i > 0 and not self._cells[i - 1][j].visited:
+                next_index_list.append((i - 1, j))
+            # right
+            if i < self._num_cols - 1 and not self._cells[i + 1][j].visited:
+                next_index_list.append((i + 1, j))
+            # up
+            if j > 0 and not self._cells[i][j - 1].visited:
+                next_index_list.append((i, j - 1))
+            # down
+            if j < self._num_rows - 1 and not self._cells[i][j + 1].visited:
+                next_index_list.append((i, j + 1))
 
+            # if there is nowhere to go from here
+            # just break out
+            if len(next_index_list) == 0:
+                self._draw_cell(i, j)
+                return
 
-if __name__ == "__main__":
-    main()
+            # randomly choose the next direction to go
+            direction_index = random.randrange(len(next_index_list))
+            next_index = next_index_list[direction_index]
+
+            # knock out walls between this cell and the next cell(s)
+            # right
+            if next_index[0] == i + 1:
+                self._cells[i][j].has_right_wall = False
+                self._cells[i + 1][j].has_left_wall = False
+            # left
+            if next_index[0] == i - 1:
+                self._cells[i][j].has_left_wall = False
+                self._cells[i - 1][j].has_right_wall = False
+            # down
+            if next_index[1] == j + 1:
+                self._cells[i][j].has_bottom_wall = False
+                self._cells[i][j + 1].has_top_wall = False
+            # up
+            if next_index[1] == j - 1:
+                self._cells[i][j].has_top_wall = False
+                self._cells[i][j - 1].has_bottom_wall = False
+
+            # recursively visit the next cell
+            self._break_walls_r(next_index[0], next_index[1])
+
+    def _reset_cells_visited(self):
+        for col in self._cells:
+            for cell in col:
+                cell.visited = False
+
+    # returns True if this is the end cell, OR if it leads to the end cell.
+    # returns False if this is a loser cell.
+    def _solve_r(self, i, j):
+        self._animate()
+
+        # vist the current cell
+        self._cells[i][j].visited = True
+
+        # if we are at the end cell, we are done!
+        if i == self._num_cols - 1 and j == self._num_rows - 1:
+            return True
+
+        # move left if there is no wall and it hasn't been visited
+        if (
+            i > 0
+            and not self._cells[i][j].has_left_wall
+            and not self._cells[i - 1][j].visited
+        ):
+            self._cells[i][j].draw_move(self._cells[i - 1][j])
+            if self._solve_r(i - 1, j):
+                return True
+            else:
+                self._cells[i][j].draw_move(self._cells[i - 1][j], True)
+
+        # move right if there is no wall and it hasn't been visited
+        if (
+            i < self._num_cols - 1
+            and not self._cells[i][j].has_right_wall
+            and not self._cells[i + 1][j].visited
+        ):
+            self._cells[i][j].draw_move(self._cells[i + 1][j])
+            if self._solve_r(i + 1, j):
+                return True
+            else:
+                self._cells[i][j].draw_move(self._cells[i + 1][j], True)
+
+        # move up if there is no wall and it hasn't been visited
+        if (
+            j > 0
+            and not self._cells[i][j].has_top_wall
+            and not self._cells[i][j - 1].visited
+        ):
+            self._cells[i][j].draw_move(self._cells[i][j - 1])
+            if self._solve_r(i, j - 1):
+                return True
+            else:
+                self._cells[i][j].draw_move(self._cells[i][j - 1], True)
+
+        # move down if there is no wall and it hasn't been visited
+        if (
+            j < self._num_rows - 1
+            and not self._cells[i][j].has_bottom_wall
+            and not self._cells[i][j + 1].visited
+        ):
+            self._cells[i][j].draw_move(self._cells[i][j + 1])
+            if self._solve_r(i, j + 1):
+                return True
+            else:
+                self._cells[i][j].draw_move(self._cells[i][j + 1], True)
+
+        # we went the wrong way let the previous cell know by returning False
+        return False
+
+    # create the moves for the solution using a depth first search
+    def solve(self):
+        return self._solve_r(0, 0)
