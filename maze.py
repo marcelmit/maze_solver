@@ -42,20 +42,52 @@ class Line:
             self.end_point.x, self.end_point.y,
             fill=fill_color, width=2
 )
+        
+class Cell:
+    def __init__(self, _x1, _x2, _y1, _y2, _win):
+        self.has_left_wall = True
+        self.has_right_wall = True
+        self.has_top_wall = True
+        self.has_bottom_wall = True
+        self._x1 = _x1
+        self._x2 = _x2
+        self._y1 = _y1
+        self._y2 = _y2
+        self._win = _win
+
+    def draw(self):
+        if self.has_left_wall:
+            self._win.canvas.create_line(self._x1, self._y1, self._x1, self._y2)
+        if self.has_right_wall:
+            self._win.canvas.create_line(self._x2, self._y1, self._x2, self._y2)
+        if self.has_top_wall:
+            self._win.canvas.create_line(self._x1, self._y1, self._x2, self._y1)
+        if self.has_bottom_wall:
+            self._win.canvas.create_line(self._x1, self._y2, self._x2, self._y2)
 
 
 def main():
     win = Window(800, 600)
+    # Create Cells
+    cell1 = Cell(50, 50, 100, 100, win)
+    cell2 = Cell(110, 50, 160, 100, win)
+    cell3 = Cell(50, 110, 100, 160, win)
+    cell4 = Cell(110, 110, 160, 160, win)
+    # Draw Cells
+    cell1.draw()
+    cell2.draw()
+    cell3.draw()
+    cell4.draw()
     # Create Points
-    point1 = Point(10, 10)
-    point2 = Point(100, 100)
-    point3 = Point(50, 150)
+    #point1 = Point(10, 10)
+    #point2 = Point(100, 100)
+    #point3 = Point(50, 150)
     # Create Lines
-    line1 = Line(point1, point2)
-    line2 = Line(point3, point1)  
+    #line1 = Line(point1, point2)
+    #line2 = Line(point3, point1) 
     # Draw Lines
-    win.draw_line(line1, "black")
-    win.draw_line(line2, "red")
+    #win.draw_line(line1, "black")
+    #win.draw_line(line2, "red")
     win.wait_for_close()
 
 
